@@ -1,0 +1,57 @@
+.global main
+
+.section .rodata
+prompt_msg:	.asciz	"Enter a value for x, y, and z: "
+scan_str:	.asciz	"%u %u %u"
+result_msg:	.asciz	"%u + %u + %u = "
+ans_msg:	.asciz  "%u\n"
+
+.data
+x:	.word	0
+y:	.word	0
+z:	.word	0
+
+.text
+main:	push {lr}
+
+	// our code here
+	// output our prompt
+	ldr r0, =prompt_msg
+	bl printf
+
+	// get the input from user
+	ldr r0, =scan_str
+	ldr r1, =x
+	ldr r2, =y
+	ldr r3, =z
+	bl scanf
+
+	// data in x r0 label into r5.
+	// data in y r1 label into r6.
+	// data in z r2 label into r8.
+	ldr r0, =x
+	ldr r1, =y
+	ldr r2, =z
+	ldr r5, [r0]	// r5 holds value of x
+	ldr r6, [r1]	// r6 holds value of y
+	ldr r8, [r2]	// r8 holds value of z
+
+	// add x+y (essentially r5+r6) and store in r3
+	add r3, r5, r6
+	// then add (x+y) + z (r8) store in r4
+	add r4, r3, r8
+
+	// output the results
+	ldr r0, =result_msg
+	mov r1, r5	// r1 = r5, r1 holds value of x
+	mov r2, r6	// r2 = r6, r2 holds value of y
+	mov r3, r8	// r3 = r8, r3 holds value of z
+	bl printf
+
+	ldr r0, =ans_msg
+	mov r1, r4  	// r1 = r4, r4 holds the answer
+
+	bl printf
+
+	mov r0, #0
+	pop {pc}
