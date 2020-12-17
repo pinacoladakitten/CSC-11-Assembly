@@ -1,0 +1,27 @@
+.align 4
+.section .data
+pins:   .word 0, 2, 3, 21, 22, 23, 24, 25
+ms:             .word 1000, 800, 600, 400, 300, 250, 215, 200
+abc:    .asciz "Code %i\n"
+
+.align 4
+.global main
+.text
+
+main:
+        push {lr}
+
+        bl wiringPiSetup
+
+reset:
+
+        mov r0, #0
+        ldr r9, =pins
+        ldr r10, =ms
+
+
+        mov r4, #0
+
+
+
+        pop {pc}
