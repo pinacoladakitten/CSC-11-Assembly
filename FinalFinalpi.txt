@@ -1,0 +1,142 @@
+.equ BUTTON_IN, 29
+.equ BUTTON_OUT, 7
+.equ HIGH, 1
+.equ LOW, 0
+.equ OUTPUT, 1
+.equ INPUT, 0
+.equ SIZE, 8
+
+.section .rodata
+pins:   .word 0, 2, 3, 21, 22, 23, 24, 25               //Wiring pi pin numbers
+ms:             .word 1000, 800, 600, 400, 300, 250, 215, 195   //Miliseconds on / off for each level
+
+.align 4
+.global main
+.text
+main:
+        //Save link register
+        push {lr}
+
+        //Setup
+        bl wiringPiSetup
+
+reset:
+        //Initialize values
+        ldr r9, =pins
+        ldr r10, =ms
+
+        //Setup lights
+        mov r4, #0
+for_lights:
+        //Loop condition
+        cmp r4, #SIZE
+        beq for_lights_end
+
+        //Set pinmode
+        ldr r0, [r9, +r4, lsl #2]
+        mov r1, #OUTPUT
+        bl pinMode
+
+        //Set pin power off
+        ldr r0, [r9, +r4, lsl #2]
+        mov r1, #LOW
+        bl digitalWrite
+
+        add r4, #1
+        b for_lights
+
+for_lights_end:
+
+
+        //Setup button
+        mov r0, #BUTTON_OUT
+        mov r1, #OUTPUT
+        bl pinMode
+        mov r0, #BUTTON_IN
+        mov r1, #INPUT
+        bl pinMode
+        mov r0, #BUTTON_OUT
+        mov r1, #HIGH
+        bl digitalWrite
+
+
+        //Game Loop
+        mov r4, #0
+game:
+        //Loop condition, end game if rounds finished
+        cmp r4, #SIZE
+        beq game_end
+
+        //Load round values from array
+        ldr r6, [r10, +r4, lsl #2]
+        ldr r7, [r9, +r4, lsl #2]
+
+input_loop:
+        //Set loop break time as current time plus time interval to click
+        bl millis
+        add r5, r0, r6
+
+        //Turn on current light
+        mov r0, r7
+        mov r1, #HIGH
+        bl digitalWrite
+
+while_on:
+        //Loop condtion, while less than target time to break
+        bl millis
+        cmp r0, r5
+        bge while_on_end
+
+        //Read button, go-to end of round if clicked at right time
+        mov r0, #BUTTON_IN
+        bl digitalRead
+        cmp r0, #HIGH
+        beq input_loop_end
+
+        b while_on
+
+while_on_end:
+
+
+        //Set loop break time as current time plus time interval to click
+        bl millis
+        add r5, r0, r6
+
+        //Turn off current light
+        mov r0, r7
+        mov r1, #LOW
+        bl digitalWrite
+
+while_off:
+        //Loop condition
+        bl millis
+        cmp r0, r5
+        bge while_off_end
+
+        //Read button, reset game if clicked at wrong time
+        mov r0, #BUTTON_IN
+        bl digitalRead
+        cmp r0, #HIGH
+        beq reset
+
+        b while_off
+
+while_off_end:
+
+        //Continue input loop while no input given
+        b input_loop
+
+input_loop_end:
+
+        //Ensure light is turned off after each round
+        mov r0, r7
+        mov r1, #LOW
+        bl digitalWrite
+
+        //Increment loop index and head to next round
+        add r4, #1
+        b game
+
+game_end:
+        //Game over, life ends in misery, I James Rungsawang, Love Angela Su
+        pop {pc}
